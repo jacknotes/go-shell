@@ -1,0 +1,9 @@
+[Mysql]
+Host = "192.168.31.202:3306"
+Port = "3306"     
+UserName = "go_shell"
+Password = "go_shell"
+Database  = "go_shell"
+
+[App]
+Code=[300607,300623,300113,300014]
