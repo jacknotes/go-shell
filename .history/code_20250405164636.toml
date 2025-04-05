@@ -1,9 +1,0 @@
-[Mysql]
-Host=''
-Port     
-UserName 
-Password 
-Database 
-
-[App]
-Code=[300607,300623,300113,300014]
