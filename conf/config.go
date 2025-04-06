@@ -33,14 +33,14 @@ type Config struct {
 
 func NewDefaultApp() *App {
 	return &App{
-		Code:    []int{},
+		Code:    []string{},
 		OutFile: "output.txt",
 	}
 }
 
 type App struct {
-	Code    []int  `toml:"Code"`
-	OutFile string `toml:"OutFile"`
+	Code    []string `toml:"Code"`
+	OutFile string   `toml:"OutFile"`
 }
 
 func NewDefaultMysql() *Mysql {

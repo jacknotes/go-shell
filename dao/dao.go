@@ -19,17 +19,6 @@ var (
 	service *ServiceImpl
 )
 
-const (
-	t = `
-#HELP QuanTianZhuMaiJinE value
-#TYPE QuanTianZhuMaiJinE gauge
-QuanTianZhuMaiJinE{code="300623",name="JJWD",ZhuMaiJinE="612.6",ZhuLiJinE="-138.4"} 612.6
-#HELP QuanTianZhuLiJinE value
-#TYPE QuanTianZhuLiJinE gauge
-QuanTianZhuLiJinE{code="300623",name="JJWD",ZhuMaiJinE="612.6",ZhuLiJinE="-138.4"} -138.4
-`
-)
-
 // 响应数据结构体（根据实际返回调整）
 type ResponseData struct {
 	ResultSets   []*ResultSet `json:"ResultSets"`
@@ -63,7 +52,7 @@ func WriteDB(config *conf.Config) error {
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_jyds"
 
 	for j := range config.App.Code {
-		body := fmt.Sprintf("{\"Params\":[\"%d\",\"zjlx\",\"\"]}", config.App.Code[j])
+		body := fmt.Sprintf("{\"Params\":[\"%s\",\"zjlx\",\"\"]}", config.App.Code[j])
 		jsonData := []byte(body)
 
 		// 3. 发送POST请求
@@ -120,7 +109,7 @@ func NewDefaultData() *Data {
 }
 
 type Data struct {
-	Code  int
+	Code  string
 	Date  string
 	JLR   string
 	ZLJLR string
@@ -163,7 +152,7 @@ func SelectData(config *conf.Config) error {
 			return err
 		}
 		// prometheus格式，key不能包含'"',k v之前使用=号隔开，不能使用':'号隔开
-		formatString := fmt.Sprintf("QuanTianZhuMaiJinE{Code=\"%d\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.JLR)
+		formatString := fmt.Sprintf("QuanTianZhuMaiJinE{Code=\"%s\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.JLR)
 		_, writeErr := writer.WriteString(formatString + "\n")
 		if writeErr != nil {
 			return writeErr
@@ -188,7 +177,7 @@ func SelectData(config *conf.Config) error {
 		}
 
 		// prometheus格式，key不能包含'"',k v之前使用=号隔开，不能使用':'号隔开
-		formatString := fmt.Sprintf("QuanTianZhuLiJinE{Code=\"%d\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.ZLJLR)
+		formatString := fmt.Sprintf("QuanTianZhuLiJinE{Code=\"%s\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.ZLJLR)
 		_, writeErr := writer.WriteString(formatString + "\n")
 		if writeErr != nil {
 			return writeErr

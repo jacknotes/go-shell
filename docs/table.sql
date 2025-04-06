@@ -1,7 +1,7 @@
 
 CREATE TABLE if NOT EXISTS `go_shell`.`zg_ag`  (
-  `code` int(255) NULL COMMENT '股票代码',
-  `date` date NULL COMMENT '日期',
+  `code` varchar(255) NULL COMMENT '股票代码',
+  `date` varchar(255) NULL COMMENT '日期',
   `jlr` varchar(255) NULL COMMENT '净流入金额',
   `jlrzb` varchar(255) NULL COMMENT '净流入占比',
   `zljlr` varchar(255) NULL COMMENT '主力净额金额',
