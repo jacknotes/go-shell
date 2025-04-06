@@ -1,4 +1,4 @@
-module github.com/jacknotes/go-shell.git
+module github.com/jacknotes/go-shell
 
 go 1.23.1
 

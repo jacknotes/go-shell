@@ -5,4 +5,5 @@ Password = "go_shell"
 Database  = "go_shell"
 
 [App]
+OutFile="metric.txt"
 Code=[300607,300623,300113,300014]

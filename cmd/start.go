@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"github.com/jacknotes/go-shell.git/conf"
-	"github.com/jacknotes/go-shell.git/dao"
+	"github.com/jacknotes/go-shell/conf"
+	"github.com/jacknotes/go-shell/dao"
 	"github.com/spf13/cobra"
 )
 
 var (
 	confFile string
 )
-
 var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "启动 go-shell",
@@ -21,7 +20,12 @@ var StartCmd = &cobra.Command{
 			return err
 		}
 
-		err = dao.WriteDB(conf.GetFile)
+		err = dao.WriteDB(conf.C())
+		if err != nil {
+			return err
+		}
+
+		err = dao.SelectData(conf.C())
 		if err != nil {
 			return err
 		}
@@ -31,6 +35,6 @@ var StartCmd = &cobra.Command{
 }
 
 func init() {
-	StartCmd.PersistentFlags().StringVarP(&confFile, "config", "f", "code.toml", "code文件路径")
+	StartCmd.PersistentFlags().StringVarP(&confFile, "config", "f", "etc/code.toml", "code文件路径")
 	RootCmd.AddCommand(StartCmd)
 }

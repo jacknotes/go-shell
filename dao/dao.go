@@ -1,15 +1,33 @@
 package dao
 
 import (
+	"bufio"
 	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jacknotes/go-shell.git/conf"
+	"github.com/jacknotes/go-shell/conf"
+)
+
+var (
+	// 定义对象是满足该接口的实例
+	service *ServiceImpl
+)
+
+const (
+	t = `
+#HELP QuanTianZhuMaiJinE value
+#TYPE QuanTianZhuMaiJinE gauge
+QuanTianZhuMaiJinE{code="300623",name="JJWD",ZhuMaiJinE="612.6",ZhuLiJinE="-138.4"} 612.6
+#HELP QuanTianZhuLiJinE value
+#TYPE QuanTianZhuLiJinE gauge
+QuanTianZhuLiJinE{code="300623",name="JJWD",ZhuMaiJinE="612.6",ZhuLiJinE="-138.4"} -138.4
+`
 )
 
 // 响应数据结构体（根据实际返回调整）
@@ -26,15 +44,26 @@ type ResultSet struct {
 	RowNum  int64               `json:"RowNum"`
 }
 
-func WriteDB(file *conf.File) error {
+func NewServiceImpl() *ServiceImpl {
+	return &ServiceImpl{
+		db: conf.C().Mysql.GetDB(),
+	}
+}
+
+type ServiceImpl struct {
+	db *sql.DB
+}
+
+func WriteDB(config *conf.Config) error {
+	service = NewServiceImpl()
 	// 1. 创建HTTP客户端
 	client := &http.Client{}
 
 	// 2. 构造请求参数
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_jyds"
 
-	for j := range file.App.Code {
-		body := fmt.Sprintf("{\"Params\":[\"%d\",\"zjlx\",\"\"]}", file.App.Code[j])
+	for j := range config.App.Code {
+		body := fmt.Sprintf("{\"Params\":[\"%d\",\"zjlx\",\"\"]}", config.App.Code[j])
 		jsonData := []byte(body)
 
 		// 3. 发送POST请求
@@ -57,18 +86,11 @@ func WriteDB(file *conf.File) error {
 		}
 
 		// 5. 写入MySQL
-		db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s", file.Mysql.UserName,
-			file.Mysql.Password, file.Mysql.Host, file.Mysql.Database))
+		tx, err := service.db.Begin()
 		if err != nil {
 			return err
 		}
-		defer db.Close()
-
-		tx, err := db.Begin()
-		if err != nil {
-			return err
-		}
-		stmt, err := tx.Prepare("INSERT IGNORE zg_ag (code, date, jlr, jlrzb, zljlr, zljlrzb, cddjlr, cddjlrzb, ddjlr, ddjlrzb) VALUES (?,?,?,?,?,?,?,?,?,?)")
+		stmt, err := tx.Prepare(InsertSQL)
 		if err != nil {
 			return err
 		}
@@ -77,7 +99,7 @@ func WriteDB(file *conf.File) error {
 		for _, data := range responseData.ResultSets {
 			for i := range data.Content {
 				// fmt.Printf("debug %d,%s,%s,%s,%s,%s,%s,%s,%s,%s", file.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
-				_, err := stmt.Exec(file.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
+				_, err := stmt.Exec(config.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
 				if err != nil {
 					tx.Rollback()
 					return err
@@ -87,6 +109,89 @@ func WriteDB(file *conf.File) error {
 		err = tx.Commit()
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func NewDefaultData() *Data {
+	return &Data{}
+}
+
+type Data struct {
+	Code  int
+	Date  string
+	JLR   string
+	ZLJLR string
+}
+
+func SelectData(config *conf.Config) error {
+	// 创建文件写入对象（追加模式）
+	// file, err := os.OpenFile("output.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	// 创建文件写入对象（覆盖模式）
+	file, err := os.OpenFile(config.App.OutFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush() // 确保缓冲区数据写入磁盘
+
+	queryStmt, err := service.db.Prepare(SelectSQL)
+	if err != nil {
+		return err
+	}
+	defer queryStmt.Close()
+
+	// QuanTianZhuMaiJinE
+	rows, err := queryStmt.Query()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	writer.WriteString("# HELP QuanTianZhuMaiJinE value" + "\n" + "# TYPE QuanTianZhuMaiJinE gauge" + "\n")
+	for rows.Next() {
+		ins := NewDefaultData()
+		err := rows.Scan(
+			&ins.Code, &ins.Date, &ins.JLR, &ins.ZLJLR,
+		)
+		if err != nil {
+			return err
+		}
+		// prometheus格式，key不能包含'"',k v之前使用=号隔开，不能使用':'号隔开
+		formatString := fmt.Sprintf("QuanTianZhuMaiJinE{Code=\"%d\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.JLR)
+		_, writeErr := writer.WriteString(formatString + "\n")
+		if writeErr != nil {
+			return writeErr
+		}
+	}
+
+	// QuanTianZhuLiJinE
+	rows, err = queryStmt.Query()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	writer.WriteString("\n" + "# HELP QuanTianZhuLiJinE value" + "\n" + "# TYPE QuanTianZhuLiJinE gauge" + "\n")
+	for rows.Next() {
+		ins := NewDefaultData()
+		err := rows.Scan(
+			&ins.Code, &ins.Date, &ins.JLR, &ins.ZLJLR,
+		)
+		if err != nil {
+			return err
+		}
+
+		// prometheus格式，key不能包含'"',k v之前使用=号隔开，不能使用':'号隔开
+		formatString := fmt.Sprintf("QuanTianZhuLiJinE{Code=\"%d\",Date=\"%s\",JLR=\"%s\",ZLJLR=\"%s\"} %s", ins.Code, ins.Date, ins.JLR, ins.ZLJLR, ins.ZLJLR)
+		_, writeErr := writer.WriteString(formatString + "\n")
+		if writeErr != nil {
+			return writeErr
 		}
 	}
 

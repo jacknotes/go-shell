@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/jacknotes/go-shell.git/cmd"
+	"github.com/jacknotes/go-shell/cmd"
 )
 
 func main() {
