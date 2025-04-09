@@ -129,13 +129,27 @@ func SelectData(config *conf.Config) error {
 	writer := bufio.NewWriter(file)
 	defer writer.Flush() // 确保缓冲区数据写入磁盘
 
+	// QuanTianZhuMaiJinE
+	str := "('"
+	// in ('300041','300046')
+	for i := range config.App.Code {
+		if i == len(config.App.Code)-1 {
+			str = str + config.App.Code[i] + "')"
+		} else {
+			str = str + config.App.Code[i] + "','"
+		}
+
+	}
+	SelectSQL := fmt.Sprintf("SELECT code,date,jlr,zljlr FROM `zg_ag` WHERE code IN %s", str)
+	// fmt.Printf("debug %s", SelectSQL)
+	// return nil
+
 	queryStmt, err := service.db.Prepare(SelectSQL)
 	if err != nil {
 		return err
 	}
 	defer queryStmt.Close()
 
-	// QuanTianZhuMaiJinE
 	rows, err := queryStmt.Query()
 	if err != nil {
 		return err
