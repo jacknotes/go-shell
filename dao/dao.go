@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"net/http"
 
@@ -66,6 +67,8 @@ func WriteDB(config *conf.Config) error {
 		if err != nil {
 			return err
 		}
+
+		time.Sleep(time.Millisecond * 500)
 		defer resp.Body.Close()
 
 		// 4. 处理响应
