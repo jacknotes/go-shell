@@ -18,3 +18,29 @@ ADD UNIQUE INDEX `unique_IDX`(`code`, `date`, `jlr`, `jlrzb`);
 ALTER TABLE `go_shell`.`zg_ag` 
 ADD INDEX `code_IDX`(`code`) USING BTREE,
 ADD INDEX `date_IDX`(`date`) USING BTREE;
+
+
+----
+
+					
+CREATE TABLE if NOT EXISTS `go_shell`.`zg_ag_sdgd`  (
+  `code` varchar(255) NULL COMMENT '股票代码',
+  `date` varchar(255) NULL COMMENT '报告日期',
+  `gdmc` varchar(255) NULL COMMENT '股东名称',
+  `gdbh` varchar(255) NULL COMMENT '股东编号',
+  `gdcgsl` varchar(255) NULL COMMENT '股东持股数量',
+  `gdlb` varchar(255) NULL COMMENT '股东类别',
+  `gfxz` varchar(255) NULL COMMENT '股份性质',
+  `wzdn1` varchar(255) NULL COMMENT '未知代码1',
+  `wzdn2` varchar(255) NULL COMMENT '未知代码2',
+  `wzdn3` varchar(255) NULL COMMENT '未知代码3',
+  `wzdn4` varchar(255) NULL COMMENT '未知代码4'
+);
+
+ALTER TABLE `go_shell`.`zg_ag_sdgd` 
+ADD UNIQUE INDEX `unique_IDX`(`code`, `date`, `gdmc`, `gdcgsl`);
+
+ALTER TABLE `go_shell`.`zg_ag_sdgd` 
+ADD INDEX `code_IDX`(`code`) USING BTREE,
+ADD INDEX `date_IDX`(`date`) USING BTREE;
+----

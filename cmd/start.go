@@ -25,6 +25,11 @@ var StartCmd = &cobra.Command{
 			return err
 		}
 
+		err = dao.WriteDB_SDGD(conf.C())
+		if err != nil {
+			return err
+		}
+
 		err = dao.SelectData(conf.C())
 		if err != nil {
 			return err

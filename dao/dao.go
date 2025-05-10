@@ -68,8 +68,8 @@ func WriteDB(config *conf.Config) error {
 			return err
 		}
 
-		time.Sleep(time.Millisecond * 500)
 		defer resp.Body.Close()
+		time.Sleep(time.Millisecond * 500)
 
 		// 4. 处理响应
 		var responseData ResponseData
@@ -90,11 +90,77 @@ func WriteDB(config *conf.Config) error {
 
 		for _, data := range responseData.ResultSets {
 			for i := range data.Content {
-				// fmt.Printf("debug %d,%s,%s,%s,%s,%s,%s,%s,%s,%s", file.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
+				// fmt.Printf("debug %s,%s,%s,%s,%s,%s,%s,%s,%s,%s", config.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
 				_, err := stmt.Exec(config.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
 				if err != nil {
 					tx.Rollback()
 					return err
+				}
+			}
+		}
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func WriteDB_SDGD(config *conf.Config) error {
+	service = NewServiceImpl()
+	// 1. 创建HTTP客户端
+	client := &http.Client{}
+	// 2. 构造请求参数
+	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_gdyj"
+
+	for j := range config.App.Code {
+		body_sdgd := fmt.Sprintf("{\"Params\":[\"%s\",\"ltgd\",\"\",\"\",\"1\",\"1\",\"20\"]}", config.App.Code[j])
+		jsonData_sdgd := []byte(body_sdgd)
+
+		// 3. 发送POST请求
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData_sdgd))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+		time.Sleep(time.Millisecond * 500)
+
+		// 4. 处理响应
+		var responseData ResponseData
+		if err := json.NewDecoder(resp.Body).Decode(&responseData); err != nil {
+			return err
+		}
+
+		// 5. 写入MySQL
+		tx, err := service.db.Begin()
+		if err != nil {
+			return err
+		}
+		stmt, err := tx.Prepare(InsertSDGDSQL)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for i, data := range responseData.ResultSets {
+			if i == 1 {
+				// fmt.Println(data.Content[0])
+				for k := range data.Content {
+					// fmt.Println(data.Content[k])
+					// fmt.Printf("debug %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", config.App.Code[j], data.Content[k][0], data.Content[k][1], data.Content[k][2], data.Content[k][3], data.Content[k][4], data.Content[k][5], data.Content[k][6], data.Content[k][7], data.Content[k][8], data.Content[k][9])
+					_, err := stmt.Exec(config.App.Code[j], data.Content[k][0], data.Content[k][1], data.Content[k][2], data.Content[k][3], data.Content[k][4], data.Content[k][5], data.Content[k][6], data.Content[k][7], data.Content[k][8], data.Content[k][9])
+					if err != nil {
+						tx.Rollback()
+						return err
+					}
 				}
 			}
 		}
