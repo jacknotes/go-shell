@@ -18,6 +18,7 @@ import (
 var (
 	// 定义对象是满足该接口的实例
 	service *ServiceImpl
+	td      time.Duration = 300 * time.Millisecond
 )
 
 // 响应数据结构体（根据实际返回调整）
@@ -53,6 +54,7 @@ func WriteDB(config *conf.Config) error {
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_jyds"
 
 	for j := range config.App.Code {
+		fmt.Printf("debug jlr %s", config.App.Code[j])
 		body := fmt.Sprintf("{\"Params\":[\"%s\",\"zjlx\",\"\"]}", config.App.Code[j])
 		jsonData := []byte(body)
 
@@ -69,7 +71,6 @@ func WriteDB(config *conf.Config) error {
 		}
 
 		defer resp.Body.Close()
-		time.Sleep(time.Millisecond * 500)
 
 		// 4. 处理响应
 		var responseData ResponseData
@@ -102,6 +103,7 @@ func WriteDB(config *conf.Config) error {
 		if err != nil {
 			return err
 		}
+		time.Sleep(td)
 	}
 
 	return nil
@@ -115,6 +117,7 @@ func WriteDB_SDGD(config *conf.Config) error {
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_gdyj"
 
 	for j := range config.App.Code {
+		fmt.Printf("debug sdgd %s", config.App.Code[j])
 		body_sdgd := fmt.Sprintf("{\"Params\":[\"%s\",\"ltgd\",\"\",\"\",\"1\",\"1\",\"20\"]}", config.App.Code[j])
 		jsonData_sdgd := []byte(body_sdgd)
 
@@ -131,7 +134,6 @@ func WriteDB_SDGD(config *conf.Config) error {
 		}
 
 		defer resp.Body.Close()
-		time.Sleep(time.Millisecond * 500)
 
 		// 4. 处理响应
 		var responseData ResponseData
@@ -168,6 +170,7 @@ func WriteDB_SDGD(config *conf.Config) error {
 		if err != nil {
 			return err
 		}
+		time.Sleep(td)
 	}
 
 	return nil
