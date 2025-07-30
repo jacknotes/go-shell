@@ -54,7 +54,7 @@ func WriteDB(config *conf.Config) error {
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_jyds"
 
 	for j := range config.App.Code {
-		fmt.Printf("debug jlr %s", config.App.Code[j])
+		fmt.Printf("debug jlr %s\n", config.App.Code[j])
 		body := fmt.Sprintf("{\"Params\":[\"%s\",\"zjlx\",\"\"]}", config.App.Code[j])
 		jsonData := []byte(body)
 
@@ -89,14 +89,12 @@ func WriteDB(config *conf.Config) error {
 		}
 		defer stmt.Close()
 
-		for _, data := range responseData.ResultSets {
-			for i := range data.Content {
-				// fmt.Printf("debug %s,%s,%s,%s,%s,%s,%s,%s,%s,%s", config.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
-				_, err := stmt.Exec(config.App.Code[j], data.Content[i][0], data.Content[i][1], data.Content[i][2], data.Content[i][3], data.Content[i][4], data.Content[i][5], data.Content[i][6], data.Content[i][7], data.Content[i][8])
-				if err != nil {
-					tx.Rollback()
-					return err
-				}
+		for _, data := range responseData.ResultSets[0].Content {
+			// fmt.Printf("debug %s,%s,%s,%s,%s,%s,%s,%s,%s,%s", config.App.Code[j], data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8])
+			_, err := stmt.Exec(config.App.Code[j], data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+			if err != nil {
+				tx.Rollback()
+				return err
 			}
 		}
 		err = tx.Commit()
@@ -117,7 +115,7 @@ func WriteDB_SDGD(config *conf.Config) error {
 	url := "http://zxtp.guosen.com.cn:7615/TQLEX?Entry=CWServ.tdxf10_gg_gdyj"
 
 	for j := range config.App.Code {
-		fmt.Printf("debug sdgd %s", config.App.Code[j])
+		fmt.Printf("debug sdgd %s\n", config.App.Code[j])
 		body_sdgd := fmt.Sprintf("{\"Params\":[\"%s\",\"ltgd\",\"\",\"\",\"1\",\"1\",\"20\"]}", config.App.Code[j])
 		jsonData_sdgd := []byte(body_sdgd)
 
